@@ -11,14 +11,17 @@ function addChild() {
 
     const [year, month] = birthdateStr.split("-").map(Number);
     childrenBirthdates.push({ year, month });
-    childrenBirthdates.sort((a, b) => a.year - b.year || a.month - b.month); // 年月順にソート
+
+    // ソート（年 → 月の順）
+    childrenBirthdates.sort((a, b) => a.year - b.year || a.month - b.month);
+    
     updateChildrenList();
     dateInput.value = ""; // 入力欄をクリア
 }
 
 function updateChildrenList() {
     const list = document.getElementById("children-list");
-    list.innerHTML = ""; // リストをリセット
+    list.innerHTML = ""; // リストをクリア
 
     childrenBirthdates.forEach((child, index) => {
         const formattedDate = `${child.year}年${child.month}月`;
@@ -36,11 +39,15 @@ function calculateAllowance() {
 
     let resultsByYear = {};
     let totalAmount = 0;
-    let latestEndYear = Math.max(...childrenBirthdates.map(d => d.year)) + 19;
+    
+    // 一番下の子の支給終了年（最大の子の年 + 18）
+    let latestEndYear = Math.max(...childrenBirthdates.map(d => d.year)) + 18;
 
-    for (let year = Math.min(...childrenBirthdates.map(d => d.year)); year < latestEndYear; year++) {
+    for (let year = Math.min(...childrenBirthdates.map(d => d.year)); year <= latestEndYear; year++) {
         let yearTotal = 0;
-        let eligibleChildren = childrenBirthdates.filter(d => year >= d.year && year < d.year + 19);
+        
+        // 対象年で手当を受け取れる子どもたち
+        let eligibleChildren = childrenBirthdates.filter(d => year >= d.year && year < d.year + 18);
         eligibleChildren.sort((a, b) => a.year - b.year || a.month - b.month);
 
         eligibleChildren.forEach((child, index) => {
@@ -48,11 +55,11 @@ function calculateAllowance() {
             let amount = 0;
 
             if (age < 3) {
-                amount = 15000;
+                amount = 15000; // 3歳未満: 15,000円
             } else if (age < 12) {
-                amount = (index >= 2) ? 15000 : 10000;
+                amount = (index >= 2) ? 15000 : 10000; // 3歳〜小学生（第1・2子: 10,000円、第3子以降: 15,000円）
             } else if (age < 15) {
-                amount = 10000;
+                amount = 10000; // 中学生: 10,000円
             }
 
             yearTotal += amount;

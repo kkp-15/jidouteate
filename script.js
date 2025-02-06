@@ -1,55 +1,56 @@
-let childrenBirthYears = [];
+let childrenBirthdates = [];
 
 function addChild() {
-    const yearInput = document.getElementById("childYear");
-    const birthYear = parseInt(yearInput.value);
+    const dateInput = document.getElementById("childBirthdate");
+    const birthdate = dateInput.value;
 
-    if (isNaN(birthYear) || birthYear < 2000 || birthYear > new Date().getFullYear()) {
-        alert("有効な西暦を入力してください。（2000年以降）");
+    if (!birthdate) {
+        alert("生年月日を入力してください。");
         return;
     }
 
-    childrenBirthYears.push(birthYear);
-    childrenBirthYears.sort(); // 年齢順に並べる
+    childrenBirthdates.push(new Date(birthdate));
+    childrenBirthdates.sort((a, b) => a - b); // 生年月日順に並べる
     updateChildrenList();
-    yearInput.value = "";
+    dateInput.value = "";
 }
 
 function updateChildrenList() {
     const list = document.getElementById("children-list");
     list.innerHTML = "";
-    childrenBirthYears.forEach((year, index) => {
+    childrenBirthdates.forEach((date, index) => {
+        const formattedDate = date.toISOString().split("T")[0]; // YYYY-MM-DD形式
         const li = document.createElement("li");
-        li.textContent = `第${index + 1}子: ${year}年生まれ`;
+        li.textContent = `第${index + 1}子: ${formattedDate}`;
         list.appendChild(li);
     });
 }
 
 function calculateAllowance() {
-    if (childrenBirthYears.length === 0) {
+    if (childrenBirthdates.length === 0) {
         alert("お子様の生年月日を入力してください。");
         return;
     }
 
     let resultsByYear = {};
     let totalAmount = 0;
-    let endYear = Math.max(...childrenBirthYears) + 19; // 一番下の子の18歳3月まで
+    let latestEndYear = Math.max(...childrenBirthdates.map(d => d.getFullYear())) + 19;
 
-    for (let year = Math.min(...childrenBirthYears); year < endYear; year++) {
-        let eligibleChildren = childrenBirthYears.filter(b => year >= b && year < b + 19);
-        eligibleChildren.sort(); // 年齢順に並べる
+    for (let year = Math.min(...childrenBirthdates.map(d => d.getFullYear())); year < latestEndYear; year++) {
         let yearTotal = 0;
+        let eligibleChildren = childrenBirthdates.filter(d => year >= d.getFullYear() && year < d.getFullYear() + 19);
+        eligibleChildren.sort((a, b) => a - b);
 
-        eligibleChildren.forEach((birthYear, index) => {
-            let age = year - birthYear;
+        eligibleChildren.forEach((birthdate, index) => {
+            let age = year - birthdate.getFullYear();
             let amount = 0;
 
             if (age < 3) {
-                amount = 15000; // 0～2歳
+                amount = 15000;
             } else if (age < 12) {
-                amount = (index >= 2) ? 15000 : 10000; // 第3子以降は増額
+                amount = (index >= 2) ? 15000 : 10000;
             } else if (age < 15) {
-                amount = 10000; // 中学生
+                amount = 10000;
             }
 
             yearTotal += amount;

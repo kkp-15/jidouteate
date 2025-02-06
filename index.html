@@ -1,113 +1,99 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>児童手当シミュレーション</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>児童手当シミュレーション</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ccc;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    button {
+      padding: 10px 15px;
+      margin-top: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <h1>児童手当シミュレーション</h1>
+  <h1>児童手当シミュレーション</h1>
+  <table id="result-table">
+    <thead>
+      <tr>
+        <th>年度</th>
+        <th>第1子</th>
+        <th>第2子</th>
+        <th>第3子</th>
+        <th>合計</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 表の内容はJavaScriptで追加 -->
+    </tbody>
+  </table>
+  <button id="copy-btn">内容をコピー</button>
+  <button id="download-csv-btn">CSVダウンロード</button>
 
-    <h2>子どもの生年月日を入力</h2>
-    <label>年:</label>
-    <input type="number" id="child-year" placeholder="例: 2020" min="1900" max="2099">
-    <label>月:</label>
-    <input type="number" id="child-month" placeholder="例: 5" min="1" max="12">
-    <button onclick="addChild()">追加</button>
+  <script>
+    // 支給額のサンプルデータ
+    const data = [
+      { year: 2025, child1: 180000, child2: 120000, child3: 180000, total: 480000 },
+      { year: 2026, child1: 120000, child2: 120000, child3: 180000, total: 540000 },
+      { year: 2027, child1: 120000, child2: 120000, child3: 180000, total: 540000 },
+    ];
 
-    <h3>入力された子ども（CSV形式）:</h3>
-    <div id="children-list"></div>
+    // テーブルにデータを追加
+    const tableBody = document.querySelector("#result-table tbody");
+    data.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.year}</td>
+        <td>${row.child1.toLocaleString()}円</td>
+        <td>${row.child2.toLocaleString()}円</td>
+        <td>${row.child3.toLocaleString()}円</td>
+        <td>${row.total.toLocaleString()}円</td>
+      `;
+      tableBody.appendChild(tr);
+    });
 
-    <h2>計算結果:</h2>
-    <div id="result"></div>
+    // コピー機能
+    document.getElementById("copy-btn").addEventListener("click", function() {
+      let text = "";
+      data.forEach(row => {
+        text += `${row.year}, ${row.child1.toLocaleString()}円, ${row.child2.toLocaleString()}円, ${row.child3.toLocaleString()}円, ${row.total.toLocaleString()}円\n`;
+      });
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      alert("内容がコピーされました!");
+    });
 
-    <script>
-        let childrenBirthdates = [];
-
-        function addChild() {
-            const year = parseInt(document.getElementById("child-year").value);
-            const month = parseInt(document.getElementById("child-month").value);
-
-            if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
-                alert("正しい年月を入力してください");
-                return;
-            }
-
-            childrenBirthdates.push({ year, month });
-
-            displayChildren();
-            calculateAllowance();
-
-            document.getElementById("child-year").value = "";
-            document.getElementById("child-month").value = "";
-        }
-
-        function displayChildren() {
-            const listDiv = document.getElementById("children-list");
-            listDiv.innerHTML = childrenBirthdates
-                .map((child, index) => `<p>第${index + 1}子: ${child.year},${child.month}</p>`)
-                .join("");
-        }
-
-        function calculateAllowance() {
-            if (childrenBirthdates.length === 0) {
-                document.getElementById("result").innerHTML = "";
-                return;
-            }
-
-            childrenBirthdates.sort((a, b) => a.year - b.year || a.month - b.month);
-
-            const results = {};
-            let totalSum = 0;
-            const currentYear = new Date().getFullYear();
-            const currentMonth = new Date().getMonth() + 1;
-
-            childrenBirthdates.forEach((child, index) => {
-                let age = 0;
-                let year = child.year;
-                let month = child.month;
-                const endYear = child.year + 18;
-
-                while (year < endYear || (year === endYear && month <= 3)) {
-                    if (year < currentYear || (year === currentYear && month < currentMonth)) {
-                        month++;
-                        if (month > 12) {
-                            month = 1;
-                            year++;
-                            age++;
-                        }
-                        continue;
-                    }
-
-                    let monthlyAllowance = 0;
-                    if (age < 3) {
-                        monthlyAllowance = 15000;
-                    } else if (age < 12) {
-                        monthlyAllowance = index >= 2 ? 15000 : 10000;
-                    } else {
-                        monthlyAllowance = 10000;
-                    }
-
-                    if (!results[year]) results[year] = 0;
-                    results[year] += monthlyAllowance;
-
-                    month++;
-                    if (month > 12) {
-                        month = 1;
-                        year++;
-                        age++;
-                    }
-                }
-            });
-
-            const resultDiv = document.getElementById("result");
-            resultDiv.innerHTML = Object.keys(results).sort().map(year => {
-                totalSum += results[year] * 12;
-                return `<p>${year}年: ${(results[year] * 12).toLocaleString()}円</p>`;
-            }).join("");
-
-            resultDiv.innerHTML += `<p><strong>総支給額: ${totalSum.toLocaleString()}円</strong></p>`;
-        }
-    </script>
+    // CSVダウンロード機能
+    document.getElementById("download-csv-btn").addEventListener("click", function() {
+      let csvContent = "年度, 第1子, 第2子, 第3子, 合計\n";
+      data.forEach(row => {
+        csvContent += `${row.year}, ${row.child1.toLocaleString()}円, ${row.child2.toLocaleString()}円, ${row.child3.toLocaleString()}円, ${row.total.toLocaleString()}円\n`;
+      });
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "jidouteate.csv";
+      link.click();
+    });
+  </script>
 </body>
 </html>

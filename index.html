@@ -1,28 +1,47 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>児童手当シミュレーション</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <h1>児童手当シミュレーション</h1>
-    
-    <div id="input-area">
-        <label>お子様の生年月日を入力:</label>
-        <input type="date" id="childBirthdate">
-        <button onclick="addChild()">追加</button>
-    </div>
+let childrenBirthdates = [];
 
-    <h3>入力されたお子様:</h3>
-    <ul id="children-list"></ul>
+function addChild() {
+    const dateInput = document.getElementById("childBirthdate");
+    const birthdateStr = dateInput.value;
 
-    <button onclick="calculateAllowance()">計算</button>
+    if (!birthdateStr) {
+        alert("生年月日を入力してください。");
+        return;
+    }
 
-    <h2>結果</h2>
-    <div id="result-area"></div>
+    const birthdate = new Date(birthdateStr);
+    childrenBirthdates.push(birthdate);
+    childrenBirthdates.sort((a, b) => a - b); // 生年月日順に並べる
+    updateChildrenList();
+    dateInput.value = ""; // 入力欄をクリア
+}
 
-    <script src="script.js"></script>
-</body>
-</html>
+function updateChildrenList() {
+    const list = document.getElementById("children-list");
+    list.innerHTML = ""; // リストをリセット
+
+    childrenBirthdates.forEach((date, index) => {
+        const formattedDate = date.toISOString().split("T")[0]; // YYYY-MM-DD形式
+        const li = document.createElement("li");
+        li.textContent = `第${index + 1}子: ${formattedDate}`;
+        list.appendChild(li);
+    });
+}
+
+function calculateAllowance() {
+    if (childrenBirthdates.length === 0) {
+        alert("お子様の生年月日を入力してください。");
+        return;
+    }
+
+    let resultsByYear = {};
+    let totalAmount = 0;
+    let latestEndYear = Math.max(...childrenBirthdates.map(d => d.getFullYear())) + 19;
+
+    for (let year = Math.min(...childrenBirthdates.map(d => d.getFullYear())); year < latestEndYear; year++) {
+        let yearTotal = 0;
+        let eligibleChildren = childrenBirthdates.filter(d => year >= d.getFullYear() && year < d.getFullYear() + 19);
+        eligibleChildren.sort((a, b) => a - b);
+
+        eligibleChildren.forEach((birthdate, index) => {
+           

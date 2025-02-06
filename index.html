@@ -7,18 +7,24 @@
 </head>
 <body>
     <h1>児童手当シミュレーション</h1>
+    
+    <div>
+        <h2>子どもの生年月日を入力してください</h2>
+        <div id="children-form">
+            <!-- 子ども追加フォーム -->
+            <label>年:</label>
+            <input type="number" id="child-year" placeholder="年" min="1900" max="2099">
+            <label>月:</label>
+            <input type="number" id="child-month" placeholder="月" min="1" max="12">
+            <button onclick="addChild()">追加</button>
+        </div>
+        <h3>入力された子どもの情報:</h3>
+        <div id="children-list"></div>
+        
+        <h2>計算結果:</h2>
+        <div id="result"></div>
+    </div>
 
-    <label for="childBirthdate">お子様の生年月（月まで）:</label>
-    <input type="month" id="childBirthdate">
-    <button id="addChildButton">追加</button>
-    <button id="calculateButton">計算</button>
-
-    <h2>登録されたお子様</h2>
-    <ul id="children-list"></ul>
-
-    <h2>計算結果</h2>
-    <div id="result-area"></div>
-
-    <script src="script.js"></script>
+    <script src="jidouteate.js"></script>
 </body>
 </html>

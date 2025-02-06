@@ -1,86 +1,74 @@
-document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("addChildButton").addEventListener("click", addChild);
-    document.getElementById("calculateButton").addEventListener("click", calculateAllowance);
-});
-
-let childrenBirthdates = [];
-
-function addChild() {
-    const dateInput = document.getElementById("childBirthdate");
-    const birthdateStr = dateInput.value;
-
-    if (!birthdateStr) {
-        alert("生年月（年と月）を入力してください。");
-        return;
-    }
-
-    const [year, month] = birthdateStr.split("-").map(Number);
-    childrenBirthdates.push({ year, month });
-
-    // ソート（年 → 月の順）
-    childrenBirthdates.sort((a, b) => a.year - b.year || a.month - b.month);
-
-    updateChildrenList();
-    dateInput.value = ""; // 入力欄をクリア
-}
-
-function updateChildrenList() {
-    const list = document.getElementById("children-list");
-    list.innerHTML = ""; // リストをクリア
-
-    childrenBirthdates.forEach((child, index) => {
-        const formattedDate = `${child.year}年${child.month}月`;
-        const li = document.createElement("li");
-        li.textContent = `第${index + 1}子: ${formattedDate}`;
-        list.appendChild(li);
-    });
-}
-
+/**
+ * 🏷️ 【関数】calculateAllowance()
+ * 児童手当の支給額を計算し、年ごとに表示する（2024年改正対応）
+ */
 function calculateAllowance() {
     if (childrenBirthdates.length === 0) {
-        alert("お子様の生年月を入力してください。");
+        alert("子どもの生年月を追加してください。");
         return;
     }
 
-    let resultsByYear = {};
-    let totalAmount = 0;
+    const results = {}; // 各年ごとの支給額を格納
 
-    let latestEndYear = Math.max(...childrenBirthdates.map(d => d.year)) + 18;
+    childrenBirthdates.forEach((child, index) => {
+        let year = child.year;
+        let month = child.month;
+        let age = 0;
 
-    for (let year = Math.min(...childrenBirthdates.map(d => d.year)); year <= latestEndYear; year++) {
-        let yearTotal = 0;
-        let eligibleChildren = childrenBirthdates.filter(d => year >= d.year && year < d.year + 18);
-        eligibleChildren.sort((a, b) => a.year - b.year || a.month - b.month);
+        while (age < 18) {
+            // 支給終了年（18歳の3月まで）
+            const endYear = child.year + 18;
+            if (year >= endYear && month > 3) break;
 
-        eligibleChildren.forEach((child, index) => {
-            let age = year - child.year;
-            let amount = 0;
-
+            // 支給額の判定
+            let monthlyAllowance = 0;
             if (age < 3) {
-                amount = 15000; 
+                monthlyAllowance = 15000; // 0歳～3歳未満
             } else if (age < 12) {
-                amount = (index >= 2) ? 15000 : 10000;
-            } else if (age < 15) {
-                amount = 10000;
+                monthlyAllowance = index >= 2 ? 15000 : 10000; // 3歳～小学校修了前
+            } else {
+                monthlyAllowance = 10000; // 中学生・高校生（18歳まで）
             }
 
-            yearTotal += amount;
-        });
+            // 年ごとの支給額に加算
+            if (!results[year]) results[year] = 0;
+            results[year] += monthlyAllowance;
 
-        resultsByYear[year] = yearTotal;
-        totalAmount += yearTotal;
-    }
+            // 次の月へ
+            month++;
+            if (month > 12) {
+                month = 1;
+                year++;
+                age++;
+            }
+        }
+    });
 
-    displayResults(resultsByYear, totalAmount);
+    // 結果を表示
+    displayResults(results);
 }
 
-function displayResults(results, total) {
-    const resultArea = document.getElementById("result-area");
-    resultArea.innerHTML = "<h3>支給額一覧</h3>";
+/**
+ * 🏷️ 【関数】displayResults()
+ * 計算結果を画面に表示する
+ */
+function displayResults(results) {
+    const resultDiv = document.getElementById("result");
+    resultDiv.innerHTML = ""; // クリア
 
-    for (let year in results) {
-        resultArea.innerHTML += `<p>${year}年: ${results[year].toLocaleString()}円</p>`;
-    }
+    let totalSum = 0;
+    Object.keys(results).sort().forEach(year => {
+        const amount = results[year] * 12; // 年間支給額
+        totalSum += amount;
 
-    resultArea.innerHTML += `<h2>総支給額: ${total.toLocaleString()}円</h2>`;
+        const p = document.createElement("p");
+        p.textContent = `${year}年: ${amount.toLocaleString()}円`;
+        resultDiv.appendChild(p);
+    });
+
+    // 合計支給額を表示
+    const totalP = document.createElement("p");
+    totalP.textContent = `総支給額: ${totalSum.toLocaleString()}円`;
+    totalP.style.fontWeight = "bold";
+    resultDiv.appendChild(totalP);
 }

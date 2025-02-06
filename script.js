@@ -14,8 +14,11 @@ function addChild() {
         return;
     }
 
+    // CSV形式で保存（年,月）
+    const childData = `${year},${month}`;
+
     // 子どもの生年月日をリストに追加
-    childrenBirthdates.push({ year: year, month: month });
+    childrenBirthdates.push({ csv: childData });
 
     // 入力した子どもの情報を表示
     displayChildren();
@@ -27,7 +30,7 @@ function addChild() {
 
 /**
  * 🏷️ 【関数】displayChildren()
- * 入力した子どもたちの情報をリストに表示
+ * 入力した子どもたちの情報をリストに表示（CSV形式）
  */
 function displayChildren() {
     const childrenListDiv = document.getElementById("children-list");
@@ -35,7 +38,7 @@ function displayChildren() {
 
     childrenBirthdates.forEach((child, index) => {
         const p = document.createElement("p");
-        p.textContent = `第${index + 1}子: ${child.year}年 ${child.month}月`;
+        p.textContent = `第${index + 1}子: ${child.csv}`;
         childrenListDiv.appendChild(p);
     });
 }
@@ -53,14 +56,16 @@ function calculateAllowance() {
     const results = {}; // 各年ごとの支給額を格納
 
     childrenBirthdates.forEach((child, index) => {
-        let year = child.year;
-        let month = child.month;
+        const [year, month] = child.csv.split(',').map(Number);
         let age = 0;
+
+        let currentYear = year;
+        let currentMonth = month;
 
         while (age < 18) {
             // 支給終了年（18歳の3月まで）
-            const endYear = child.year + 18;
-            if (year >= endYear && month > 3) break;
+            const endYear = year + 18;
+            if (currentYear >= endYear && currentMonth > 3) break;
 
             // 支給額の判定
             let monthlyAllowance = 0;
@@ -73,14 +78,14 @@ function calculateAllowance() {
             }
 
             // 年ごとの支給額に加算
-            if (!results[year]) results[year] = 0;
-            results[year] += monthlyAllowance;
+            if (!results[currentYear]) results[currentYear] = 0;
+            results[currentYear] += monthlyAllowance;
 
             // 次の月へ
-            month++;
-            if (month > 12) {
-                month = 1;
-                year++;
+            currentMonth++;
+            if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear++;
                 age++;
             }
         }

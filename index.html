@@ -7,24 +7,107 @@
 </head>
 <body>
     <h1>児童手当シミュレーション</h1>
-    
-    <div>
-        <h2>子どもの生年月日を入力してください</h2>
-        <div id="children-form">
-            <!-- 子ども追加フォーム -->
-            <label>年:</label>
-            <input type="number" id="child-year" placeholder="年" min="1900" max="2099">
-            <label>月:</label>
-            <input type="number" id="child-month" placeholder="月" min="1" max="12">
-            <button id="add-child-btn">追加</button>
-        </div>
-        <h3>入力された子どもの情報（CSV形式）:</h3>
-        <div id="children-list"></div>
-        
-        <h2>計算結果:</h2>
-        <div id="result"></div>
-    </div>
 
-    <script src="jidouteate.js"></script>
+    <h2>子どもの生年月日を入力</h2>
+    <label>年:</label>
+    <input type="number" id="child-year" placeholder="例: 2020" min="1900" max="2099">
+    <label>月:</label>
+    <input type="number" id="child-month" placeholder="例: 5" min="1" max="12">
+    <button onclick="addChild()">追加</button>
+
+    <h3>入力された子ども（CSV形式）:</h3>
+    <div id="children-list"></div>
+
+    <h2>計算結果:</h2>
+    <div id="result"></div>
+
+    <script>
+        let childrenBirthdates = [];
+
+        function addChild() {
+            const year = parseInt(document.getElementById("child-year").value);
+            const month = parseInt(document.getElementById("child-month").value);
+
+            if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+                alert("正しい年月を入力してください");
+                return;
+            }
+
+            childrenBirthdates.push({ year, month });
+
+            displayChildren();
+            calculateAllowance();
+
+            document.getElementById("child-year").value = "";
+            document.getElementById("child-month").value = "";
+        }
+
+        function displayChildren() {
+            const listDiv = document.getElementById("children-list");
+            listDiv.innerHTML = childrenBirthdates
+                .map((child, index) => `<p>第${index + 1}子: ${child.year},${child.month}</p>`)
+                .join("");
+        }
+
+        function calculateAllowance() {
+            if (childrenBirthdates.length === 0) {
+                document.getElementById("result").innerHTML = "";
+                return;
+            }
+
+            childrenBirthdates.sort((a, b) => a.year - b.year || a.month - b.month);
+
+            const results = {};
+            let totalSum = 0;
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+
+            childrenBirthdates.forEach((child, index) => {
+                let age = 0;
+                let year = child.year;
+                let month = child.month;
+                const endYear = child.year + 18;
+
+                while (year < endYear || (year === endYear && month <= 3)) {
+                    if (year < currentYear || (year === currentYear && month < currentMonth)) {
+                        month++;
+                        if (month > 12) {
+                            month = 1;
+                            year++;
+                            age++;
+                        }
+                        continue;
+                    }
+
+                    let monthlyAllowance = 0;
+                    if (age < 3) {
+                        monthlyAllowance = 15000;
+                    } else if (age < 12) {
+                        monthlyAllowance = index >= 2 ? 15000 : 10000;
+                    } else {
+                        monthlyAllowance = 10000;
+                    }
+
+                    if (!results[year]) results[year] = 0;
+                    results[year] += monthlyAllowance;
+
+                    month++;
+                    if (month > 12) {
+                        month = 1;
+                        year++;
+                        age++;
+                    }
+                }
+            });
+
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = Object.keys(results).sort().map(year => {
+                totalSum += results[year] * 12;
+                return `<p>${year}年: ${(results[year] * 12).toLocaleString()}円</p>`;
+            }).join("");
+
+            resultDiv.innerHTML += `<p><strong>総支給額: ${totalSum.toLocaleString()}円</strong></p>`;
+        }
+    </script>
 </body>
 </html>

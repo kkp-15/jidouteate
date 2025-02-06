@@ -2,22 +2,24 @@ let childrenBirthdates = [];
 
 function addChild() {
     const dateInput = document.getElementById("childBirthdate");
-    const birthdate = dateInput.value;
+    const birthdateStr = dateInput.value;
 
-    if (!birthdate) {
+    if (!birthdateStr) {
         alert("生年月日を入力してください。");
         return;
     }
 
-    childrenBirthdates.push(new Date(birthdate));
+    const birthdate = new Date(birthdateStr);
+    childrenBirthdates.push(birthdate);
     childrenBirthdates.sort((a, b) => a - b); // 生年月日順に並べる
     updateChildrenList();
-    dateInput.value = "";
+    dateInput.value = ""; // 入力欄をクリア
 }
 
 function updateChildrenList() {
     const list = document.getElementById("children-list");
-    list.innerHTML = "";
+    list.innerHTML = ""; // リストをリセット
+
     childrenBirthdates.forEach((date, index) => {
         const formattedDate = date.toISOString().split("T")[0]; // YYYY-MM-DD形式
         const li = document.createElement("li");
@@ -42,34 +44,4 @@ function calculateAllowance() {
         eligibleChildren.sort((a, b) => a - b);
 
         eligibleChildren.forEach((birthdate, index) => {
-            let age = year - birthdate.getFullYear();
-            let amount = 0;
-
-            if (age < 3) {
-                amount = 15000;
-            } else if (age < 12) {
-                amount = (index >= 2) ? 15000 : 10000;
-            } else if (age < 15) {
-                amount = 10000;
-            }
-
-            yearTotal += amount;
-        });
-
-        resultsByYear[year] = yearTotal;
-        totalAmount += yearTotal;
-    }
-
-    displayResults(resultsByYear, totalAmount);
-}
-
-function displayResults(results, total) {
-    const resultArea = document.getElementById("result-area");
-    resultArea.innerHTML = "<h3>支給額一覧</h3>";
-
-    for (let year in results) {
-        resultArea.innerHTML += `<p>${year}年: ${results[year].toLocaleString()}円</p>`;
-    }
-
-    resultArea.innerHTML += `<h2>総支給額: ${total.toLocaleString()}円</h2>`;
-}
+           

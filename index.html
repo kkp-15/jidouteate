@@ -1,225 +1,165 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>児童手当シミュレーション</title>
-  <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      margin-bottom: 20px;
-    }
-    th, td {
-      padding: 10px;
-      text-align: center;
-      border: 1px solid #ccc;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    button {
-      padding: 10px 15px;
-      margin-top: 10px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    input {
-      padding: 5px;
-      font-size: 16px;
-      margin-right: 10px;
-    }
-    .input-section {
-      margin-bottom: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>児童手当シミュレーション</title>
+    <style>
+        .child-info { margin-bottom: 10px; }
+        .output { margin-top: 20px; }
+        .error { color: red; }
+        .result-table { border-collapse: collapse; width: 100%; }
+        .result-table th, .result-table td { border: 1px solid black; padding: 5px; }
+    </style>
 </head>
 <body>
-  <h1>児童手当シミュレーション</h1>
 
-  <!-- 子ども数の入力 -->
-  <div class="input-section">
-    <label for="children-count">子ども数: </label>
-    <input type="number" id="children-count" placeholder="1" min="1" max="6">
-    <button id="next-step-btn">次へ</button>
-  </div>
+<h2>児童手当シミュレーション</h2>
 
-  <!-- 年月入力フォーム（初期は非表示） -->
-  <div id="year-month-section" class="input-section" style="display: none;">
-    <label for="year-input">年: </label>
-    <input type="number" id="year-input" placeholder="2025">
-    <button id="add-btn">追加</button>
-  </div>
+<div id="children-input">
+    <div class="child-info">
+        <label>第一子の年齢： </label>
+        <input type="number" id="first-child-year" placeholder="年">
+        <input type="number" id="first-child-month" placeholder="月">
+        <button onclick="addChild()">追加</button>
+    </div>
+</div>
 
-  <!-- 結果表示 -->
-  <table id="result-table">
-    <thead>
-      <tr>
-        <th>年度</th>
-        <th>第1子</th>
-        <th>第2子</th>
-        <th>第3子</th>
-        <th>第4子</th>
-        <th>第5子</th>
-        <th>第6子</th>
-        <th>合計</th>
-        <th>受け取り月（偶数月）</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- 表の内容はJavaScriptで追加 -->
-    </tbody>
-  </table>
+<div class="output">
+    <h3>支給額の出力</h3>
+    <table class="result-table" id="results">
+        <thead>
+            <tr>
+                <th>子ども</th>
+                <th>年/月</th>
+                <th>支給額（円）</th>
+            </tr>
+        </thead>
+        <tbody id="result-body">
+        </tbody>
+    </table>
+    <button onclick="generateCSV()">CSVとしてダウンロード</button>
+</div>
 
-  <!-- コピーとCSVダウンロード -->
-  <button id="copy-btn">内容をコピー</button>
-  <button id="download-csv-btn">CSVダウンロード</button>
+<script>
+    let childrenData = [];
+    let childCount = 0;
+    
+    function addChild() {
+        const year = document.getElementById(`first-child-year`).value;
+        const month = document.getElementById(`first-child-month`).value;
 
-  <script>
-    // 初期データを空にする
-    const data = [];
-
-    // 児童手当額の設定（増額部分も含めて）
-    const allowance = {
-      child1: 15000,  // 第1子
-      child2: 15000,  // 第2子
-      child3: 30000,  // 第3子
-      child4: 30000,  // 第4子
-      child5: 30000,  // 第5子
-      child6: 30000   // 第6子
-    };
-
-    // 「次へ」ボタンが押されたときの処理
-    document.getElementById("next-step-btn").addEventListener("click", function() {
-      const childrenCount = document.getElementById("children-count").value;
-
-      if (childrenCount && childrenCount >= 1 && childrenCount <= 6) {
-        // 年月入力フォームを表示
-        document.getElementById("year-month-section").style.display = "block";
-      } else {
-        alert("1から6の間で子ども数を入力してください");
-      }
-    });
-
-    // 入力された年を基に、支給年の範囲を表示
-    document.getElementById("add-btn").addEventListener("click", function() {
-      const year = document.getElementById("year-input").value;
-      const childrenCount = document.getElementById("children-count").value;
-
-      if (year && childrenCount) {
-        const endYear = Number(year) + 18;  // 18歳まで支給されるので、18年後に終了
-
-        // すべての支給年（月ごとに受け取る）を計算
-        const rows = [];
-        for (let currentYear = Number(year); currentYear <= endYear; currentYear++) {
-          const month = currentYear === endYear ? 3 : 12; // 最後の年は3月終了、その他は12月
-
-          // 年月を追加
-          rows.push(calculateAllowance(currentYear, month, childrenCount));
+        if (!year || !month) {
+            alert("年と月を入力してください！");
+            return;
         }
 
-        data.push(...rows); // 新しく計算したデータを追加
-        updateTable(); // 表を更新
-      } else {
-        alert("年と子ども数を正しく入力してください");
-      }
-    });
+        // 現在の年と月を取得
+        let currentYear = parseInt(year);
+        let currentMonth = parseInt(month);
 
-    // 児童手当額の計算をする関数
-    function calculateAllowance(year, month, childrenCount) {
-      let childrenAllowance = [];
+        childCount++;
+        let childData = {
+            childNumber: childCount,
+            year: currentYear,
+            month: currentMonth
+        };
 
-      // 各子どもごとに支給額を決定（指定された子ども数まで）
-      for (let i = 1; i <= childrenCount; i++) {
-        if (i <= 2) {
-          childrenAllowance.push(allowance[`child${i}`]);
-        } else {
-          // 第3子以降は増額される
-          childrenAllowance.push(allowance[`child3`]);
-        }
-      }
+        // 子のデータを追加
+        childrenData.push(childData);
 
-      // すべての子どもの支給額を合計
-      const total = childrenAllowance.reduce((acc, amount) => acc + amount, 0);
-
-      // 受け取り月（偶数月）の支給額を計算
-      const receiptMonthAllowance = getReceiptMonthAllowance(childrenAllowance);
-
-      return {
-        year: year,
-        child1: childrenAllowance[0] || 0,
-        child2: childrenAllowance[1] || 0,
-        child3: childrenAllowance[2] || 0,
-        child4: childrenAllowance[3] || 0,
-        child5: childrenAllowance[4] || 0,
-        child6: childrenAllowance[5] || 0,
-        total: total,
-        receiptMonthAllowance: receiptMonthAllowance
-      };
-    }
-
-    // 偶数月（2, 4, 6, 8, 10, 12）の受け取り額を計算
-    function getReceiptMonthAllowance(childrenAllowance) {
-      const months = [2, 4, 6, 8, 10, 12]; // 偶数月の配列
-
-      return months.map(month => {
-        return childrenAllowance.reduce((acc, allowance) => acc + allowance, 0);
-      });
-    }
-
-    // テーブルにデータを表示する
-    function updateTable() {
-      const tableBody = document.querySelector("#result-table tbody");
-      tableBody.innerHTML = ""; // 既存の行をクリア
-
-      if (data.length === 0) {
-        return; // データがない場合は表示しない
-      }
-
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.year}</td>
-          <td>${row.child1.toLocaleString()}円</td>
-          <td>${row.child2.toLocaleString()}円</td>
-          <td>${row.child3.toLocaleString()}円</td>
-          <td>${row.child4.toLocaleString()}円</td>
-          <td>${row.child5.toLocaleString()}円</td>
-          <td>${row.child6.toLocaleString()}円</td>
-          <td>${row.total.toLocaleString()}円</td>
-          <td>${row.receiptMonthAllowance.join(", ")}円</td>
+        // 次の入力欄を作成
+        let newChildInput = `
+            <div class="child-info">
+                <label>第${childCount + 1}子の年齢： </label>
+                <input type="number" id="child${childCount + 1}-year" placeholder="年">
+                <input type="number" id="child${childCount + 1}-month" placeholder="月">
+            </div>
         `;
-        tableBody.appendChild(tr);
-      });
+        document.getElementById("children-input").insertAdjacentHTML("beforeend", newChildInput);
+
+        // 支給額の計算
+        calculateAllowances();
     }
 
-    // コピー機能
-    document.getElementById("copy-btn").addEventListener("click", function() {
-      const table = document.querySelector("table");
-      const range = document.createRange();
-      range.selectNode(table);
-      window.getSelection().removeAllRanges();
-      window.getSelection().addRange(range);
-      document.execCommand("copy");
-      alert("テーブル内容をコピーしました！");
-    });
+    function calculateAllowances() {
+        let results = [];
+        let totalAmount = 0;
 
-    // CSVダウンロード機能
-    document.getElementById("download-csv-btn").addEventListener("click", function() {
-      let csv = "年度,第1子,第2子,第3子,第4子,第5子,第6子,合計,受け取り月（偶数月）\n";
+        childrenData.forEach((child) => {
+            // 年月をループし、支給額を計算
+            let totalYearlyAmount = 0;
+            for (let i = child.year; i <= 2024; i++) { // 最新の年2024まで
+                totalYearlyAmount += calculateMonthlyAllowance(child.year, child.month);
+            }
 
-      data.forEach(row => {
-        csv += `${row.year},${row.child1},${row.child2},${row.child3},${row.child4},${row.child5},${row.child6},${row.total},${row.receiptMonthAllowance.join(",")}\n`;
-      });
+            // 支給額を結果に追加
+            results.push({
+                childNumber: child.childNumber,
+                year: child.year,
+                month: child.month,
+                amount: totalYearlyAmount
+            });
 
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "児童手当シミュレーション.csv";
-      a.click();
-    });
-  </script>
+            totalAmount += totalYearlyAmount;
+        });
+
+        displayResults(results, totalAmount);
+    }
+
+    function calculateMonthlyAllowance(year, month) {
+        // ここで支給額を年齢に応じて計算
+        const allowanceRates = {
+            0: 15000, // 第一子の場合
+            1: 10000  // 第二子以降の場合
+        };
+
+        let allowance = allowanceRates[0]; // 基本的な支給額（例）
+        return allowance;
+    }
+
+    function displayResults(results, totalAmount) {
+        let resultBody = document.getElementById("result-body");
+        resultBody.innerHTML = "";
+
+        results.forEach(result => {
+            let row = `
+                <tr>
+                    <td>第${result.childNumber}子</td>
+                    <td>${result.year}年 ${result.month}月</td>
+                    <td>${result.amount}円</td>
+                </tr>
+            `;
+            resultBody.insertAdjacentHTML("beforeend", row);
+        });
+
+        let totalRow = `
+            <tr>
+                <td colspan="2">合計</td>
+                <td>${totalAmount}円</td>
+            </tr>
+        `;
+        resultBody.insertAdjacentHTML("beforeend", totalRow);
+    }
+
+    function generateCSV() {
+        let csv = "子ども,年/月,支給額（円）\n";
+        let results = document.querySelectorAll("#result-body tr");
+
+        results.forEach(row => {
+            let cells = row.querySelectorAll("td");
+            if (cells.length > 0) {
+                csv += `${cells[0].textContent},${cells[1].textContent},${cells[2].textContent}\n`;
+            }
+        });
+
+        // CSVデータをダウンロード
+        let hiddenElement = document.createElement('a');
+        hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+        hiddenElement.target = '_blank';
+        hiddenElement.download = '児童手当.csv';
+        hiddenElement.click();
+    }
+</script>
 </body>
 </html>

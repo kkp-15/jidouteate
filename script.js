@@ -1,3 +1,8 @@
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("addChildButton").addEventListener("click", addChild);
+    document.getElementById("calculateButton").addEventListener("click", calculateAllowance);
+});
+
 let childrenBirthdates = [];
 
 function addChild() {
@@ -14,7 +19,7 @@ function addChild() {
 
     // ソート（年 → 月の順）
     childrenBirthdates.sort((a, b) => a.year - b.year || a.month - b.month);
-    
+
     updateChildrenList();
     dateInput.value = ""; // 入力欄をクリア
 }
@@ -39,14 +44,11 @@ function calculateAllowance() {
 
     let resultsByYear = {};
     let totalAmount = 0;
-    
-    // 一番下の子の支給終了年（最大の子の年 + 18）
+
     let latestEndYear = Math.max(...childrenBirthdates.map(d => d.year)) + 18;
 
     for (let year = Math.min(...childrenBirthdates.map(d => d.year)); year <= latestEndYear; year++) {
         let yearTotal = 0;
-        
-        // 対象年で手当を受け取れる子どもたち
         let eligibleChildren = childrenBirthdates.filter(d => year >= d.year && year < d.year + 18);
         eligibleChildren.sort((a, b) => a.year - b.year || a.month - b.month);
 
@@ -55,11 +57,11 @@ function calculateAllowance() {
             let amount = 0;
 
             if (age < 3) {
-                amount = 15000; // 3歳未満: 15,000円
+                amount = 15000; 
             } else if (age < 12) {
-                amount = (index >= 2) ? 15000 : 10000; // 3歳〜小学生（第1・2子: 10,000円、第3子以降: 15,000円）
+                amount = (index >= 2) ? 15000 : 10000;
             } else if (age < 15) {
-                amount = 10000; // 中学生: 10,000円
+                amount = 10000;
             }
 
             yearTotal += amount;

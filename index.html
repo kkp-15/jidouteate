@@ -55,7 +55,11 @@
         <th>第1子</th>
         <th>第2子</th>
         <th>第3子</th>
+        <th>第4子</th>
+        <th>第5子</th>
+        <th>第6子</th>
         <th>合計</th>
+        <th>受け取り月（偶数月）</th>
       </tr>
     </thead>
     <tbody>
@@ -68,12 +72,18 @@
   <button id="download-csv-btn">CSVダウンロード</button>
 
   <script>
-    // 支給額のサンプルデータ
-    const data = [
-      { year: 2025, child1: 180000, child2: 120000, child3: 180000, total: 480000 },
-      { year: 2026, child1: 120000, child2: 120000, child3: 180000, total: 540000 },
-      { year: 2027, child1: 120000, child2: 120000, child3: 180000, total: 540000 },
-    ];
+    // 初期データを空にする
+    const data = [];
+
+    // 児童手当額の設定（増額部分も含めて）
+    const allowance = {
+      child1: 15000,  // 第1子
+      child2: 15000,  // 第2子
+      child3: 30000,  // 第3子
+      child4: 30000,  // 第4子
+      child5: 30000,  // 第5子
+      child6: 30000   // 第6子
+    };
 
     // 入力された年と月をテーブルに追加する
     document.getElementById("add-btn").addEventListener("click", function() {
@@ -82,23 +92,66 @@
       
       if (year && month) {
         // 入力された年と月をデータに追加
-        const newRow = {
-          year: year,
-          child1: 180000,
-          child2: 120000,
-          child3: 180000,
-          total: 480000,
-        };
+        const newRow = calculateAllowance(year, month);
 
         data.push(newRow); // データ配列に新しい行を追加
         updateTable(); // 表を更新
       }
     });
 
+    // 児童手当額の計算をする関数
+    function calculateAllowance(year, month) {
+      // 第1子～第6子の支給額を配列で保持
+      let childrenAllowance = [];
+
+      // 各子どもごとに支給額を決定
+      for (let i = 1; i <= 6; i++) {
+        if (i <= 2) {
+          childrenAllowance.push(allowance[`child${i}`]);
+        } else {
+          // 第3子以降は増額される
+          childrenAllowance.push(allowance[`child3`]);
+        }
+      }
+
+      // すべての子どもの支給額を合計
+      const total = childrenAllowance.reduce((acc, amount) => acc + amount, 0);
+
+      // 受け取り月（偶数月）の支給額を計算
+      const receiptMonthAllowance = getReceiptMonthAllowance(childrenAllowance);
+
+      return {
+        year: year,
+        child1: childrenAllowance[0],
+        child2: childrenAllowance[1],
+        child3: childrenAllowance[2],
+        child4: childrenAllowance[3],
+        child5: childrenAllowance[4],
+        child6: childrenAllowance[5],
+        total: total,
+        receiptMonthAllowance: receiptMonthAllowance
+      };
+    }
+
+    // 偶数月（2, 4, 6, 8, 10, 12）の受け取り額を計算
+    function getReceiptMonthAllowance(childrenAllowance) {
+      const months = [2, 4, 6, 8, 10, 12]; // 偶数月の配列
+
+      // 各月の支給額を計算
+      return months.map(month => {
+        // 例えば、2月の支給額は (年額) 12ヶ月分の額 ÷ 12
+        return childrenAllowance.reduce((acc, allowance) => acc + allowance, 0);
+      });
+    }
+
     // テーブルにデータを表示する
     function updateTable() {
       const tableBody = document.querySelector("#result-table tbody");
       tableBody.innerHTML = ""; // 既存の行をクリア
+
+      if (data.length === 0) {
+        return; // データがない場合は表示しない
+      }
 
       data.forEach(row => {
         const tr = document.createElement("tr");
@@ -107,40 +160,39 @@
           <td>${row.child1.toLocaleString()}円</td>
           <td>${row.child2.toLocaleString()}円</td>
           <td>${row.child3.toLocaleString()}円</td>
+          <td>${row.child4.toLocaleString()}円</td>
+          <td>${row.child5.toLocaleString()}円</td>
+          <td>${row.child6.toLocaleString()}円</td>
           <td>${row.total.toLocaleString()}円</td>
+          <td>${row.receiptMonthAllowance.join(", ")}円</td>
         `;
         tableBody.appendChild(tr);
       });
     }
 
-    // 初期状態のテーブルを表示
-    updateTable();
-
     // コピー機能
     document.getElementById("copy-btn").addEventListener("click", function() {
-      let text = "";
-      data.forEach(row => {
-        text += `${row.year}, ${row.child1.toLocaleString()}円, ${row.child2.toLocaleString()}円, ${row.child3.toLocaleString()}円, ${row.total.toLocaleString()}円\n`;
-      });
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
+      const table = document.querySelector("table");
+      const range = document.createRange();
+      range.selectNode(table);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
       document.execCommand("copy");
-      document.body.removeChild(textarea);
-      alert("内容がコピーされました!");
+      alert("テーブル内容をコピーしました！");
     });
 
     // CSVダウンロード機能
     document.getElementById("download-csv-btn").addEventListener("click", function() {
-      let csvContent = "年度, 第1子, 第2子, 第3子, 合計\n";
+      let csv = "年度,第1子,第2子,第3子,第4子,第5子,第6子,合計,受け取り月（偶数月）\n";
+
       data.forEach(row => {
-        csvContent += `${row.year}, ${row.child1.toLocaleString()}円, ${row.child2.toLocaleString()}円, ${row.child3.toLocaleString()}円, ${row.total.toLocaleString()}円\n`;
+        csv += `${row.year},${row.child1},${row.child2},${row.child3},${row.child4},${row.child5},${row.child6},${row.total},${row.receiptMonthAllowance.join(",")}\n`;
       });
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+      const blob = new Blob([csv], { type: "text/csv" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "jidouteate.csv";
+      link.download = "jidoteate_simulation.csv";
       link.click();
     });
   </script>

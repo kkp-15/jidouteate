@@ -8,6 +8,7 @@ function addChild() {
     const year = parseInt(document.getElementById("child-year").value);
     const month = parseInt(document.getElementById("child-month").value);
 
+    // 年と月が入力されているか確認
     if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
         alert("正しい年月を入力してください");
         return;

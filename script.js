@@ -1,3 +1,44 @@
+let childrenBirthdates = [];
+
+/**
+ * 🏷️ 【関数】addChild()
+ * 子どもの生年月日を入力してリストに追加
+ */
+function addChild() {
+    const year = parseInt(document.getElementById("child-year").value);
+    const month = parseInt(document.getElementById("child-month").value);
+
+    if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
+        alert("正しい年月を入力してください");
+        return;
+    }
+
+    // 子どもの生年月日をリストに追加
+    childrenBirthdates.push({ year: year, month: month });
+
+    // 入力した子どもの情報を表示
+    displayChildren();
+
+    // 入力欄をリセット
+    document.getElementById("child-year").value = "";
+    document.getElementById("child-month").value = "";
+}
+
+/**
+ * 🏷️ 【関数】displayChildren()
+ * 入力した子どもたちの情報をリストに表示
+ */
+function displayChildren() {
+    const childrenListDiv = document.getElementById("children-list");
+    childrenListDiv.innerHTML = "";
+
+    childrenBirthdates.forEach((child, index) => {
+        const p = document.createElement("p");
+        p.textContent = `第${index + 1}子: ${child.year}年 ${child.month}月`;
+        childrenListDiv.appendChild(p);
+    });
+}
+
 /**
  * 🏷️ 【関数】calculateAllowance()
  * 児童手当の支給額を計算し、年ごとに表示する（2024年改正対応）

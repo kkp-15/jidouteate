@@ -114,3 +114,9 @@ function displayResults(results) {
     totalP.style.fontWeight = "bold";
     resultDiv.appendChild(totalP);
 }
+
+/**
+ * 🏷️ 【関数】イベントリスナー設定
+ * 追加ボタンがクリックされたときに addChild 関数が呼ばれるように設定
+ */
+document.getElementById("add-child-btn").addEventListener("click", addChild);
